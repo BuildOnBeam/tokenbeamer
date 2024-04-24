@@ -1,4 +1,4 @@
-# Token Beamer
+# TokenBeamer
 
 Solidity smart contract for transferring multiple asset types (native currency,
 ERC-20, -721, -1155) to multiple recipients within one transaction, and checking
@@ -159,9 +159,9 @@ operator, before attempting to send them.
 
 ```typescript
 const areContractsApproved: boolean[] = await contract.read.getApprovals([
-   // owner of tokens
+  // owner of tokens
   "0x0000000000000000000000000000000000000B0b",
-   // operator to check approvals for (e.g. the TokenBeamer contract)
+  // operator to check approvals for (e.g. the TokenBeamer contract)
   "0x09e2a70200000000000000000000000000000000",
   // token contract addresses
   [
@@ -171,7 +171,7 @@ const areContractsApproved: boolean[] = await contract.read.getApprovals([
   ],
   [20n, 721n, 1155n], // token types
   [parseEther("600"), 0n, 0n], // values to transfer (only relevant for ERC-20)
-]): boolean[];
+]);
 
 // returns the approval states for each token as an array of booleans, e.g.:
 // -> [ true, true, false ]
