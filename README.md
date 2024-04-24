@@ -10,12 +10,14 @@ recipients within one transaction, and checking approval states of different tok
 - [x] Deploy script
 - [x] Add license
 - [x] Add Readme
-- [ ] Create repository
-- [ ] Invite user `qs-scope-2024` to Github repo
+- [x] Create repository
+- [x] Invite user `qs-scope-2024` to Github repo
 - [ ] Unit tests (+ docs on how to run them)
 - [ ] Submit [Quantstamp audit form](https://audit.quantstamp.com/new?from=e249c66d5786374)
 
 ## Developer guide
+
+### Deploy and verify
 
 - install and run pnpm to fetch dependencies
 - set up your environment: copy `.env.example` to `.env` and add your mnemonic
@@ -41,13 +43,13 @@ npx hardhat --network ethereum etherscan-verify
 - use `disableUpgrades()`to **permanently** disable the upgradeability of the smart contract
 - use `recoverFunds(to, token, type_, id, value)` to transfer funds stuck in the contract
 
-### Unit test
+### Unit tests
 
 _TODO: when done, write docs on how to run them_
 
 ## User guide
 
-The following examples use _viem_, please refer to the [https://viem.sh/docs/contract/getContract](viem docs) on how to
+The following examples use _viem_, please refer to the [viem docs](https://viem.sh/docs/contract/getContract) on how to
 instantiate your TokenBeamer contract instance.
 
 ### Multi-transfer Tokens
