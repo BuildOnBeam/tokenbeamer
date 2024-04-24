@@ -21,3 +21,6 @@ overrides:
       importOrderSeparation: true
       importOrderSortSpecifiers: true
       parser: "typescript"
+  - files: "*.md"
+    options:
+      printWidth: 80
