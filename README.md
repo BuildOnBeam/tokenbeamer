@@ -67,14 +67,16 @@ The owner needs to **approve all tokens** to the TokenBeamer contract first.
 
 ```javascript
 await contract.write.beamTokens([
+  // recipients
   [
     "0x00000000000000000000000000000000000a71CE",
     "0x0000000000000000000000000000000000000B0b",
-  ], // recipients
+  ],
+  // token contract addresses
   [
     "0xAAA0000000000000000000000000000000000AAA",
     "0xBBB0000000000000000000000000000000000BBB",
-  ], // token contract addresses
+  ],
   [20n, 20n], // use type `20` for ERC-20
   [0n, 0n], // use token id 0
   [parseEther("600"), parseEther("400")], // values to transfer
@@ -86,20 +88,23 @@ await contract.write.beamTokens([
 ```javascript
 await contract.write.beamTokens(
   [
+    // recipients
     [
       "0x00000000000000000000000000000000000a71CE",
       "0x0000000000000000000000000000000000000B0b",
-    ], // recipients
+    ],
+    // use zero-address for native currency
     [
       "0x0000000000000000000000000000000000000000",
       "0x0000000000000000000000000000000000000000",
-    ], // use zero-address for native currency
+    ],
     [0n, 0n], // use type 0
     [0n, 0n], // use token id 0
     [parseEther("600"), parseEther("400")], // values to transfer
   ],
+  // sum of native currency to transfer
   {
-    value: parseEther("1000"), // sum of native currency to transfer
+    value: parseEther("1000"),
   },
 );
 ```
@@ -108,16 +113,18 @@ await contract.write.beamTokens(
 
 ```javascript
 await contract.write.beamTokens([
+  // recipients
   [
     "0x00000000000000000000000000000000000a71CE",
     "0x00000000000000000000000000000000000a71CE",
     "0x0000000000000000000000000000000000000B0b",
-  ], // recipients
+  ],
+  // token contract addresses
   [
     "0x7210000000000000000000000000000000000721",
     "0x7210000000000000000000000000000000000721",
     "0x1155000000000000000000000000000000001155",
-  ], // token contract addresses
+  ],
   [721n, 721n, 1155n], // token types
   [42n, 69n, 420n], // token ids
   [1n, 1n, 100n], // values to transfer
@@ -128,12 +135,14 @@ await contract.write.beamTokens([
 
 ```javascript
 await contract.write.beamTokens([
-  ["0x00000000000000000000000000000000000a71CE"], // one recipient for all tokens
+  // one recipient for all tokens
+  ["0x00000000000000000000000000000000000a71CE"],
+  // token contract addresses
   [
     "0x2000000000000000000000000000000000000020",
     "0x7210000000000000000000000000000000000721",
     "0x1155000000000000000000000000000000001155",
-  ], // token contract addresses
+  ],
   [20n, 721n, 1155n], // token types
   [0n, 69n, 420n], // token ids
   [parseEther("600"), 1n, 100n], // values to transfer
@@ -150,13 +159,16 @@ operator, before attempting to send them.
 
 ```typescript
 const areContractsApproved: boolean[] = await contract.read.getApprovals([
-  "0x0000000000000000000000000000000000000B0b", // owner of tokens
-  "0x09e2a70200000000000000000000000000000000", // operator to check approvals for (e.g. the TokenBeamer contract)
+   // owner of tokens
+  "0x0000000000000000000000000000000000000B0b",
+   // operator to check approvals for (e.g. the TokenBeamer contract)
+  "0x09e2a70200000000000000000000000000000000",
+  // token contract addresses
   [
     "0x2000000000000000000000000000000000000020",
     "0x7210000000000000000000000000000000000721",
     "0x1155000000000000000000000000000000001155",
-  ], // token contract addresses
+  ],
   [20n, 721n, 1155n], // token types
   [parseEther("600"), 0n, 0n], // values to transfer (only relevant for ERC-20)
 ]): boolean[];
@@ -171,12 +183,15 @@ const areContractsApproved: boolean[] = await contract.read.getApprovals([
 
 ```typescript
 const areContractsApproved: boolean[] = await contract.read.getApprovals([
-  "0x00000000000000000000000000000000000a71CE", // owner of tokens
-  "0x09e2a70200000000000000000000000000000000", // approved operator
+  // owner of tokens
+  "0x00000000000000000000000000000000000a71CE",
+  // approved operator
+  "0x09e2a70200000000000000000000000000000000",
+  // token contract addresses
   [
     "0x7210000000000000000000000000000000000721",
     "0x1155000000000000000000000000000000001155",
-  ], // token contract addresses
+  ],
   [], // leave token types empty
   [], // leave values empty
 ]);
