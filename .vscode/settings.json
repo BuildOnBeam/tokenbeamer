@@ -1,0 +1,15 @@
+{
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "editor.tabSize": 2,
+  "json.format.enable": true,
+  "[solidity]": {
+    "editor.tabSize": 4,
+    "editor.defaultFormatter": "NomicFoundation.hardhat-solidity"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "cSpell.enableFiletypes": ["solidity"],
+  "cSpell.words": ["Beamer", "IERC", "Reentrancy", "xtools"]
+}
