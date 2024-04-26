@@ -312,7 +312,6 @@ contract TokenBeamerTest is Test {
 
     function testFuzz_BeamTokens_ERC721_SingleERC721_OneReceiver(uint256 numberOfTokens) public {
         vm.assume(numberOfTokens > 0 && numberOfTokens <= 100);
-        numberOfTokens = 5;
 
         address payable[] memory to = new address payable[](1);
         address[] memory tokens = new address[](numberOfTokens);
@@ -332,12 +331,207 @@ contract TokenBeamerTest is Test {
             ids[i] = i+1;
             values[i] = 1;
         }
-        
+
         vm.startPrank(tokenOwner);
         tokenBeamer.beamTokens(to, tokens, types, ids, values);
 
         for (uint256 i; i < numberOfTokens; i++) {
             assertEq(MockERC721(erc721Token).ownerOf(i+1), to[0]);
+        }
+    }
+
+    function testFuzz_BeamTokens_ERC1155_MultipleERC1155_MultipleReceivers(uint256 numberOfTokens, uint256 transferAmount) public {
+        vm.assume(transferAmount > 0);
+        vm.assume(numberOfTokens > 0 && numberOfTokens <= 100);
+
+        address payable[] memory to = new address payable[](numberOfTokens);
+        address[] memory tokens = new address[](numberOfTokens);
+        uint16[] memory types = new uint16[](numberOfTokens);
+        uint[] memory ids = new uint[](numberOfTokens);
+        uint[] memory values = new uint[](numberOfTokens);
+
+        for (uint256 i; i < numberOfTokens; i++) {
+            to[i] = payable(address(uint160(uint160(receiver) + i)));
+            tokens[i] = address(new MockERC1155());
+            vm.prank(deployer);
+            MockERC1155(tokens[i]).mint(tokenOwner, i+1, transferAmount);
+            vm.prank(tokenOwner);
+            MockERC1155(tokens[i]).setApprovalForAll(address(tokenBeamer), true);
+            types[i] = 1155;
+            ids[i] = i+1;
+            values[i] = transferAmount;
+        }
+
+        vm.startPrank(tokenOwner);
+        tokenBeamer.beamTokens(to, tokens, types, ids, values);
+
+        for (uint256 i; i < numberOfTokens; i++) {
+            assertEq(MockERC1155(tokens[i]).balanceOf(to[i], i+1), transferAmount);
+        }
+    }
+
+    function testFuzz_BeamTokens_ERC1155_MultipleERC1155_OneReceiver(uint256 numberOfTokens, uint256 transferAmount) public {
+        vm.assume(transferAmount > 0);
+        vm.assume(numberOfTokens > 0 && numberOfTokens <= 100);
+
+        address payable[] memory to = new address payable[](1);
+        address[] memory tokens = new address[](numberOfTokens);
+        uint16[] memory types = new uint16[](numberOfTokens);
+        uint[] memory ids = new uint[](numberOfTokens);
+        uint[] memory values = new uint[](numberOfTokens);
+
+        to[0] = payable(receiver);
+        for (uint256 i; i < numberOfTokens; i++) {
+            tokens[i] = address(new MockERC1155());
+            vm.prank(deployer);
+            MockERC1155(tokens[i]).mint(tokenOwner, i+1, transferAmount);
+            vm.prank(tokenOwner);
+            MockERC1155(tokens[i]).setApprovalForAll(address(tokenBeamer), true);
+            types[i] = 1155;
+            ids[i] = i+1;
+            values[i] = transferAmount;
+        }
+
+        vm.startPrank(tokenOwner);
+        tokenBeamer.beamTokens(to, tokens, types, ids, values);
+
+        for (uint256 i; i < numberOfTokens; i++) {
+            assertEq(MockERC1155(tokens[i]).balanceOf(to[0], i+1), transferAmount);
+        }
+    }
+
+    function testFuzz_BeamTokens_ERC1155_SingleERC1155_MultipleReceivers(uint256 numberOfTokens, uint256 transferAmount) public {
+        vm.assume(transferAmount > 0);
+        vm.assume(numberOfTokens > 0 && numberOfTokens <= 100);
+
+        address payable[] memory to = new address payable[](numberOfTokens);
+        address[] memory tokens = new address[](numberOfTokens);
+        uint16[] memory types = new uint16[](numberOfTokens);
+        uint[] memory ids = new uint[](numberOfTokens);
+        uint[] memory values = new uint[](numberOfTokens);
+
+        address erc721Token = address(new MockERC1155());
+
+        for (uint256 i; i < numberOfTokens; i++) {
+            to[i] = payable(address(uint160(uint160(receiver) + i)));
+            tokens[i] = erc721Token;
+            vm.prank(deployer);
+            MockERC1155(erc721Token).mint(tokenOwner, i+1, transferAmount);
+            vm.prank(tokenOwner);
+            MockERC1155(erc721Token).setApprovalForAll(address(tokenBeamer), true);
+            types[i] = 1155;
+            ids[i] = i+1;
+            values[i] = transferAmount;
+        }
+
+        vm.startPrank(tokenOwner);
+        tokenBeamer.beamTokens(to, tokens, types, ids, values);
+
+        for (uint256 i; i < numberOfTokens; i++) {
+            assertEq(MockERC1155(erc721Token).balanceOf(to[i], i+1), transferAmount);
+        }
+    }
+
+    function testFuzz_BeamTokens_ERC1155_SingleERC1155_OneReceiver(uint256 numberOfTokens, uint256 transferAmount) public {
+        vm.assume(transferAmount > 0);
+        vm.assume(numberOfTokens > 0 && numberOfTokens <= 100);
+
+        address payable[] memory to = new address payable[](1);
+        address[] memory tokens = new address[](numberOfTokens);
+        uint16[] memory types = new uint16[](numberOfTokens);
+        uint[] memory ids = new uint[](numberOfTokens);
+        uint[] memory values = new uint[](numberOfTokens);
+
+        address erc721Token = address(new MockERC1155());
+        to[0] = payable(receiver);
+        
+        for (uint256 i; i < numberOfTokens; i++) {
+            tokens[i] = erc721Token;
+            vm.prank(deployer);
+            MockERC1155(erc721Token).mint(tokenOwner, i+1, transferAmount);
+            vm.prank(tokenOwner);
+            MockERC1155(erc721Token).setApprovalForAll(address(tokenBeamer), true);
+            types[i] = 1155;
+            ids[i] = i+1;
+            values[i] = transferAmount;
+        }
+
+        vm.startPrank(tokenOwner);
+        tokenBeamer.beamTokens(to, tokens, types, ids, values);
+
+        for (uint256 i; i < numberOfTokens; i++) {
+            assertEq(MockERC1155(erc721Token).balanceOf(to[0], i+1), transferAmount);
+        }
+    }
+
+    function testFuzz_BeamTokens_AllTokens(uint256 numberOfTokens, uint256 transferAmount) public {
+        vm.assume(transferAmount > 0 && transferAmount <= 2**254);
+        vm.assume(numberOfTokens > 0 && numberOfTokens <= 25);
+        numberOfTokens = 4 * numberOfTokens;
+        vm.deal(tokenOwner, (numberOfTokens / 4) * transferAmount);
+
+        address payable[] memory to = new address payable[](numberOfTokens);
+        address[] memory tokens = new address[](numberOfTokens);
+        uint16[] memory types = new uint16[](numberOfTokens);
+        uint[] memory ids = new uint[](numberOfTokens);
+        uint[] memory values = new uint[](numberOfTokens);
+
+        uint256 nativeAmount;
+
+        for (uint256 i; i < numberOfTokens; i++) {
+            to[i] = payable(address(uint160(uint160(receiver) + i)));
+
+            if (i % 4 == 0) {
+                console.log("Native");
+                tokens[i] = address(0);
+                types[i] = 0;
+                values[i] = transferAmount;
+                nativeAmount += transferAmount;
+            } else if (i % 4 == 1) {
+                console.log("ERC20");
+                tokens[i] = address(new MockERC20());
+                vm.prank(deployer);
+                MockERC20(tokens[i]).mint(tokenOwner, transferAmount);
+                vm.prank(tokenOwner);
+                MockERC20(tokens[i]).approve(address(tokenBeamer), transferAmount);
+                types[i] = 20;
+                values[i] = transferAmount;
+            } else if (i % 4 == 2) {
+                console.log("ERC721");
+                tokens[i] = address(new MockERC721());
+                vm.prank(deployer);
+                MockERC721(tokens[i]).mint(tokenOwner, i+1);
+                vm.prank(tokenOwner);
+                MockERC721(tokens[i]).approve(address(tokenBeamer), i+1);
+                types[i] = 721;
+                values[i] = 1;
+            } else {
+                console.log("ERC1155");
+                tokens[i] = address(new MockERC1155());
+                vm.prank(deployer);
+                MockERC1155(tokens[i]).mint(tokenOwner, i+1, transferAmount);
+                vm.prank(tokenOwner);
+                MockERC1155(tokens[i]).setApprovalForAll(address(tokenBeamer), true);
+                types[i] = 1155;
+                values[i] = transferAmount;
+            }
+
+            ids[i] = i+1;
+        }
+
+        vm.startPrank(tokenOwner);
+        tokenBeamer.beamTokens{value: (numberOfTokens / 4) * transferAmount}(to, tokens, types, ids, values);
+
+        for (uint256 i; i < numberOfTokens; i++) {
+            if (i % 4 == 0) {
+                assertEq(to[i].balance, transferAmount);
+            } else if (i % 4 == 1) {
+                assertEq(MockERC20(tokens[i]).balanceOf(to[i]), transferAmount);
+            } else if (i % 4 == 2) {
+                assertEq(MockERC721(tokens[i]).ownerOf(i+1), to[i]);
+            } else {
+                assertEq(MockERC1155(tokens[i]).balanceOf(to[i], i+1), transferAmount);
+            }
         }
     }
 }
