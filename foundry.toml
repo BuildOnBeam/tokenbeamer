@@ -1,11 +1,14 @@
 [profile.default]
 src = "contracts"
 out = "out"
-libs = ["lib"]
+libs = [
+    "lib",
+    "node_modules",
+]
+
 remappings = [
     "@openzeppelin/contracts/=node_modules/@openzeppelin/contracts/",
-    "@openzeppelin/contracts-upgradeable/=node_modules/@openzeppelin/contracts-upgradeable/",
-    "@openzeppelin/foundry-upgrades/=lib/openzeppelin-foundry-upgrades/src/"
+    "@openzeppelin/contracts-upgradeable/=node_modules/@openzeppelin/contracts-upgradeable/"
 ]
 
 ffi = true

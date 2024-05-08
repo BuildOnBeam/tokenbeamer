@@ -3,25 +3,25 @@ pragma solidity ^0.8.25;
 
 import {Test, console} from "forge-std/Test.sol";
 import {TokenBeamer} from "../contracts/TokenBeamer.sol";
-import {Upgrades} from "@openzeppelin/foundry-upgrades/Upgrades.sol";
+import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {MockERC20} from "./MockERC20.sol";
 import {MockERC721} from "./MockERC721.sol";
 import {MockERC1155} from "./MockERC1155.sol";
 
 contract TokenBeamerTest is Test {
-    string mnemonic = "test test test test test test test test test test test junk";
-    address deployer;
-    address tokenOwner;
-    address receiver;
-    address operator;
-    
-    TokenBeamer public tokenBeamer;
-    address implementation;
-    address proxy;
+    string internal mnemonic = "test test test test test test test test test test test junk";
+    address internal deployer;
+    address internal tokenOwner;
+    address internal receiver;
+    address internal operator;
 
-    MockERC20 mockERC20;
-    MockERC721 mockERC721;
-    MockERC1155 mockERC1155;
+    TokenBeamer internal tokenBeamer;
+    address internal implementation;
+    address internal proxy;
+
+    MockERC20 internal mockERC20;
+    MockERC721 internal mockERC721;
+    MockERC1155 internal mockERC1155;
 
     function setUp() public {
         uint256 deployerPK = vm.deriveKey(mnemonic, 0);
@@ -42,16 +42,10 @@ contract TokenBeamerTest is Test {
 
         vm.startPrank(deployer);
 
-        // Deploy the upgradeable contract
-        proxy = Upgrades.deployTransparentProxy(
-            "TokenBeamer.sol",
-            msg.sender,
-            abi.encodeCall(TokenBeamer.initialize, ())
-        );
+        implementation = address(new TokenBeamer());
 
-        // Get the implementation address
-        implementation = Upgrades.getImplementationAddress(
-            proxy
+        proxy = address(
+            new TransparentUpgradeableProxy(implementation, deployer, abi.encodeWithSignature("initialize()"))
         );
 
         tokenBeamer = TokenBeamer(payable(proxy));
@@ -86,7 +80,9 @@ contract TokenBeamerTest is Test {
     function test_Receive_RevertWhen_EthSent() public {
         vm.startPrank(deployer);
         vm.expectRevert();
-        address(tokenBeamer).call{value: 1 ether}("");
+        (bool success, bytes memory data) = address(tokenBeamer).call{value: 1 ether}("");
+        (success);
+        (data);
     }
 
     function testFuzz_setTipRecipient(address payable newTipRecipient) public {
@@ -110,15 +106,15 @@ contract TokenBeamerTest is Test {
     }
 
     function testFuzz_BeamTokens_ETH_MultipleReceivers(uint256 numberOfTokens, uint256 transferAmount) public {
-        vm.assume(transferAmount > 0 && transferAmount <= 2**254);
+        vm.assume(transferAmount > 0 && transferAmount <= 2 ** 250);
         vm.assume(numberOfTokens > 0 && numberOfTokens <= 100);
         vm.deal(tokenOwner, numberOfTokens * transferAmount);
 
         address payable[] memory to = new address payable[](numberOfTokens);
         address[] memory tokens = new address[](numberOfTokens);
         uint16[] memory types = new uint16[](numberOfTokens);
-        uint[] memory ids = new uint[](numberOfTokens);
-        uint[] memory values = new uint[](numberOfTokens);
+        uint256[] memory ids = new uint256[](numberOfTokens);
+        uint256[] memory values = new uint256[](numberOfTokens);
 
         for (uint256 i; i < numberOfTokens; i++) {
             to[i] = payable(address(uint160(uint160(receiver) + i)));
@@ -137,15 +133,15 @@ contract TokenBeamerTest is Test {
     }
 
     function testFuzz_BeamTokens_ETH_OneReceiver(uint256 numberOfTokens, uint256 transferAmount) public {
-        vm.assume(transferAmount > 0 && transferAmount <= 2**254);
+        vm.assume(transferAmount > 0 && transferAmount <= 2 ** 250);
         vm.assume(numberOfTokens > 0 && numberOfTokens <= 100);
         vm.deal(tokenOwner, numberOfTokens * transferAmount);
 
         address payable[] memory to = new address payable[](1);
         address[] memory tokens = new address[](numberOfTokens);
         uint16[] memory types = new uint16[](numberOfTokens);
-        uint[] memory ids = new uint[](numberOfTokens);
-        uint[] memory values = new uint[](numberOfTokens);
+        uint256[] memory ids = new uint256[](numberOfTokens);
+        uint256[] memory values = new uint256[](numberOfTokens);
 
         to[0] = payable(receiver);
         for (uint256 i; i < numberOfTokens; i++) {
@@ -168,8 +164,8 @@ contract TokenBeamerTest is Test {
         address payable[] memory to = new address payable[](numberOfTokens);
         address[] memory tokens = new address[](numberOfTokens);
         uint16[] memory types = new uint16[](numberOfTokens);
-        uint[] memory ids = new uint[](numberOfTokens);
-        uint[] memory values = new uint[](numberOfTokens);
+        uint256[] memory ids = new uint256[](numberOfTokens);
+        uint256[] memory values = new uint256[](numberOfTokens);
 
         for (uint256 i; i < numberOfTokens; i++) {
             to[i] = payable(address(uint160(uint160(receiver) + i)));
@@ -198,8 +194,8 @@ contract TokenBeamerTest is Test {
         address payable[] memory to = new address payable[](1);
         address[] memory tokens = new address[](numberOfTokens);
         uint16[] memory types = new uint16[](numberOfTokens);
-        uint[] memory ids = new uint[](numberOfTokens);
-        uint[] memory values = new uint[](numberOfTokens);
+        uint256[] memory ids = new uint256[](numberOfTokens);
+        uint256[] memory values = new uint256[](numberOfTokens);
 
         to[0] = payable(receiver);
         for (uint256 i; i < numberOfTokens; i++) {
@@ -227,18 +223,18 @@ contract TokenBeamerTest is Test {
         address payable[] memory to = new address payable[](numberOfTokens);
         address[] memory tokens = new address[](numberOfTokens);
         uint16[] memory types = new uint16[](numberOfTokens);
-        uint[] memory ids = new uint[](numberOfTokens);
-        uint[] memory values = new uint[](numberOfTokens);
+        uint256[] memory ids = new uint256[](numberOfTokens);
+        uint256[] memory values = new uint256[](numberOfTokens);
 
         for (uint256 i; i < numberOfTokens; i++) {
             to[i] = payable(address(uint160(uint160(receiver) + i)));
             tokens[i] = address(new MockERC721());
             vm.prank(deployer);
-            MockERC721(tokens[i]).mint(tokenOwner, i+1);
+            MockERC721(tokens[i]).mint(tokenOwner, i + 1);
             vm.prank(tokenOwner);
-            MockERC721(tokens[i]).approve(address(tokenBeamer), i+1);
+            MockERC721(tokens[i]).approve(address(tokenBeamer), i + 1);
             types[i] = 721;
-            ids[i] = i+1;
+            ids[i] = i + 1;
             values[i] = 1;
         }
 
@@ -246,7 +242,7 @@ contract TokenBeamerTest is Test {
         tokenBeamer.beamTokens(to, tokens, types, ids, values);
 
         for (uint256 i; i < numberOfTokens; i++) {
-            assertEq(MockERC721(tokens[i]).ownerOf(i+1), to[i]);
+            assertEq(MockERC721(tokens[i]).ownerOf(i + 1), to[i]);
         }
     }
 
@@ -256,26 +252,26 @@ contract TokenBeamerTest is Test {
         address payable[] memory to = new address payable[](1);
         address[] memory tokens = new address[](numberOfTokens);
         uint16[] memory types = new uint16[](numberOfTokens);
-        uint[] memory ids = new uint[](numberOfTokens);
-        uint[] memory values = new uint[](numberOfTokens);
+        uint256[] memory ids = new uint256[](numberOfTokens);
+        uint256[] memory values = new uint256[](numberOfTokens);
 
         to[0] = payable(receiver);
         for (uint256 i; i < numberOfTokens; i++) {
             tokens[i] = address(new MockERC721());
             vm.prank(deployer);
-            MockERC721(tokens[i]).mint(tokenOwner, i+1);
+            MockERC721(tokens[i]).mint(tokenOwner, i + 1);
             vm.prank(tokenOwner);
-            MockERC721(tokens[i]).approve(address(tokenBeamer), i+1);
+            MockERC721(tokens[i]).approve(address(tokenBeamer), i + 1);
             types[i] = 721;
-            ids[i] = i+1;
+            ids[i] = i + 1;
             values[i] = 1;
         }
 
         vm.startPrank(tokenOwner);
         tokenBeamer.beamTokens(to, tokens, types, ids, values);
 
-       for (uint256 i; i < numberOfTokens; i++) {
-            assertEq(MockERC721(tokens[i]).ownerOf(i+1), to[0]);
+        for (uint256 i; i < numberOfTokens; i++) {
+            assertEq(MockERC721(tokens[i]).ownerOf(i + 1), to[0]);
         }
     }
 
@@ -285,8 +281,8 @@ contract TokenBeamerTest is Test {
         address payable[] memory to = new address payable[](numberOfTokens);
         address[] memory tokens = new address[](numberOfTokens);
         uint16[] memory types = new uint16[](numberOfTokens);
-        uint[] memory ids = new uint[](numberOfTokens);
-        uint[] memory values = new uint[](numberOfTokens);
+        uint256[] memory ids = new uint256[](numberOfTokens);
+        uint256[] memory values = new uint256[](numberOfTokens);
 
         address erc721Token = address(new MockERC721());
 
@@ -294,11 +290,11 @@ contract TokenBeamerTest is Test {
             to[i] = payable(address(uint160(uint160(receiver) + i)));
             tokens[i] = erc721Token;
             vm.prank(deployer);
-            MockERC721(erc721Token).mint(tokenOwner, i+1);
+            MockERC721(erc721Token).mint(tokenOwner, i + 1);
             vm.prank(tokenOwner);
-            MockERC721(erc721Token).approve(address(tokenBeamer), i+1);
+            MockERC721(erc721Token).approve(address(tokenBeamer), i + 1);
             types[i] = 721;
-            ids[i] = i+1;
+            ids[i] = i + 1;
             values[i] = 1;
         }
 
@@ -306,7 +302,7 @@ contract TokenBeamerTest is Test {
         tokenBeamer.beamTokens(to, tokens, types, ids, values);
 
         for (uint256 i; i < numberOfTokens; i++) {
-            assertEq(MockERC721(erc721Token).ownerOf(i+1), to[i]);
+            assertEq(MockERC721(erc721Token).ownerOf(i + 1), to[i]);
         }
     }
 
@@ -316,19 +312,19 @@ contract TokenBeamerTest is Test {
         address payable[] memory to = new address payable[](1);
         address[] memory tokens = new address[](numberOfTokens);
         uint16[] memory types = new uint16[](numberOfTokens);
-        uint[] memory ids = new uint[](numberOfTokens);
-        uint[] memory values = new uint[](numberOfTokens);
+        uint256[] memory ids = new uint256[](numberOfTokens);
+        uint256[] memory values = new uint256[](numberOfTokens);
 
         address erc721Token = address(new MockERC721());
         to[0] = payable(receiver);
         for (uint256 i; i < numberOfTokens; i++) {
             tokens[i] = erc721Token;
             vm.prank(deployer);
-            MockERC721(erc721Token).mint(tokenOwner, i+1);
+            MockERC721(erc721Token).mint(tokenOwner, i + 1);
             vm.prank(tokenOwner);
-            MockERC721(erc721Token).approve(address(tokenBeamer), i+1);
+            MockERC721(erc721Token).approve(address(tokenBeamer), i + 1);
             types[i] = 721;
-            ids[i] = i+1;
+            ids[i] = i + 1;
             values[i] = 1;
         }
 
@@ -336,29 +332,32 @@ contract TokenBeamerTest is Test {
         tokenBeamer.beamTokens(to, tokens, types, ids, values);
 
         for (uint256 i; i < numberOfTokens; i++) {
-            assertEq(MockERC721(erc721Token).ownerOf(i+1), to[0]);
+            assertEq(MockERC721(erc721Token).ownerOf(i + 1), to[0]);
         }
     }
 
-    function testFuzz_BeamTokens_ERC1155_MultipleERC1155_MultipleReceivers(uint256 numberOfTokens, uint256 transferAmount) public {
+    function testFuzz_BeamTokens_ERC1155_MultipleERC1155_MultipleReceivers(
+        uint256 numberOfTokens,
+        uint256 transferAmount
+    ) public {
         vm.assume(transferAmount > 0);
         vm.assume(numberOfTokens > 0 && numberOfTokens <= 100);
 
         address payable[] memory to = new address payable[](numberOfTokens);
         address[] memory tokens = new address[](numberOfTokens);
         uint16[] memory types = new uint16[](numberOfTokens);
-        uint[] memory ids = new uint[](numberOfTokens);
-        uint[] memory values = new uint[](numberOfTokens);
+        uint256[] memory ids = new uint256[](numberOfTokens);
+        uint256[] memory values = new uint256[](numberOfTokens);
 
         for (uint256 i; i < numberOfTokens; i++) {
             to[i] = payable(address(uint160(uint160(receiver) + i)));
             tokens[i] = address(new MockERC1155());
             vm.prank(deployer);
-            MockERC1155(tokens[i]).mint(tokenOwner, i+1, transferAmount);
+            MockERC1155(tokens[i]).mint(tokenOwner, i + 1, transferAmount);
             vm.prank(tokenOwner);
             MockERC1155(tokens[i]).setApprovalForAll(address(tokenBeamer), true);
             types[i] = 1155;
-            ids[i] = i+1;
+            ids[i] = i + 1;
             values[i] = transferAmount;
         }
 
@@ -366,29 +365,31 @@ contract TokenBeamerTest is Test {
         tokenBeamer.beamTokens(to, tokens, types, ids, values);
 
         for (uint256 i; i < numberOfTokens; i++) {
-            assertEq(MockERC1155(tokens[i]).balanceOf(to[i], i+1), transferAmount);
+            assertEq(MockERC1155(tokens[i]).balanceOf(to[i], i + 1), transferAmount);
         }
     }
 
-    function testFuzz_BeamTokens_ERC1155_MultipleERC1155_OneReceiver(uint256 numberOfTokens, uint256 transferAmount) public {
+    function testFuzz_BeamTokens_ERC1155_MultipleERC1155_OneReceiver(uint256 numberOfTokens, uint256 transferAmount)
+        public
+    {
         vm.assume(transferAmount > 0);
         vm.assume(numberOfTokens > 0 && numberOfTokens <= 100);
 
         address payable[] memory to = new address payable[](1);
         address[] memory tokens = new address[](numberOfTokens);
         uint16[] memory types = new uint16[](numberOfTokens);
-        uint[] memory ids = new uint[](numberOfTokens);
-        uint[] memory values = new uint[](numberOfTokens);
+        uint256[] memory ids = new uint256[](numberOfTokens);
+        uint256[] memory values = new uint256[](numberOfTokens);
 
         to[0] = payable(receiver);
         for (uint256 i; i < numberOfTokens; i++) {
             tokens[i] = address(new MockERC1155());
             vm.prank(deployer);
-            MockERC1155(tokens[i]).mint(tokenOwner, i+1, transferAmount);
+            MockERC1155(tokens[i]).mint(tokenOwner, i + 1, transferAmount);
             vm.prank(tokenOwner);
             MockERC1155(tokens[i]).setApprovalForAll(address(tokenBeamer), true);
             types[i] = 1155;
-            ids[i] = i+1;
+            ids[i] = i + 1;
             values[i] = transferAmount;
         }
 
@@ -396,19 +397,21 @@ contract TokenBeamerTest is Test {
         tokenBeamer.beamTokens(to, tokens, types, ids, values);
 
         for (uint256 i; i < numberOfTokens; i++) {
-            assertEq(MockERC1155(tokens[i]).balanceOf(to[0], i+1), transferAmount);
+            assertEq(MockERC1155(tokens[i]).balanceOf(to[0], i + 1), transferAmount);
         }
     }
 
-    function testFuzz_BeamTokens_ERC1155_SingleERC1155_MultipleReceivers(uint256 numberOfTokens, uint256 transferAmount) public {
+    function testFuzz_BeamTokens_ERC1155_SingleERC1155_MultipleReceivers(uint256 numberOfTokens, uint256 transferAmount)
+        public
+    {
         vm.assume(transferAmount > 0);
         vm.assume(numberOfTokens > 0 && numberOfTokens <= 100);
 
         address payable[] memory to = new address payable[](numberOfTokens);
         address[] memory tokens = new address[](numberOfTokens);
         uint16[] memory types = new uint16[](numberOfTokens);
-        uint[] memory ids = new uint[](numberOfTokens);
-        uint[] memory values = new uint[](numberOfTokens);
+        uint256[] memory ids = new uint256[](numberOfTokens);
+        uint256[] memory values = new uint256[](numberOfTokens);
 
         address erc721Token = address(new MockERC1155());
 
@@ -416,11 +419,11 @@ contract TokenBeamerTest is Test {
             to[i] = payable(address(uint160(uint160(receiver) + i)));
             tokens[i] = erc721Token;
             vm.prank(deployer);
-            MockERC1155(erc721Token).mint(tokenOwner, i+1, transferAmount);
+            MockERC1155(erc721Token).mint(tokenOwner, i + 1, transferAmount);
             vm.prank(tokenOwner);
             MockERC1155(erc721Token).setApprovalForAll(address(tokenBeamer), true);
             types[i] = 1155;
-            ids[i] = i+1;
+            ids[i] = i + 1;
             values[i] = transferAmount;
         }
 
@@ -428,31 +431,33 @@ contract TokenBeamerTest is Test {
         tokenBeamer.beamTokens(to, tokens, types, ids, values);
 
         for (uint256 i; i < numberOfTokens; i++) {
-            assertEq(MockERC1155(erc721Token).balanceOf(to[i], i+1), transferAmount);
+            assertEq(MockERC1155(erc721Token).balanceOf(to[i], i + 1), transferAmount);
         }
     }
 
-    function testFuzz_BeamTokens_ERC1155_SingleERC1155_OneReceiver(uint256 numberOfTokens, uint256 transferAmount) public {
+    function testFuzz_BeamTokens_ERC1155_SingleERC1155_OneReceiver(uint256 numberOfTokens, uint256 transferAmount)
+        public
+    {
         vm.assume(transferAmount > 0);
         vm.assume(numberOfTokens > 0 && numberOfTokens <= 100);
 
         address payable[] memory to = new address payable[](1);
         address[] memory tokens = new address[](numberOfTokens);
         uint16[] memory types = new uint16[](numberOfTokens);
-        uint[] memory ids = new uint[](numberOfTokens);
-        uint[] memory values = new uint[](numberOfTokens);
+        uint256[] memory ids = new uint256[](numberOfTokens);
+        uint256[] memory values = new uint256[](numberOfTokens);
 
         address erc721Token = address(new MockERC1155());
         to[0] = payable(receiver);
-        
+
         for (uint256 i; i < numberOfTokens; i++) {
             tokens[i] = erc721Token;
             vm.prank(deployer);
-            MockERC1155(erc721Token).mint(tokenOwner, i+1, transferAmount);
+            MockERC1155(erc721Token).mint(tokenOwner, i + 1, transferAmount);
             vm.prank(tokenOwner);
             MockERC1155(erc721Token).setApprovalForAll(address(tokenBeamer), true);
             types[i] = 1155;
-            ids[i] = i+1;
+            ids[i] = i + 1;
             values[i] = transferAmount;
         }
 
@@ -460,21 +465,21 @@ contract TokenBeamerTest is Test {
         tokenBeamer.beamTokens(to, tokens, types, ids, values);
 
         for (uint256 i; i < numberOfTokens; i++) {
-            assertEq(MockERC1155(erc721Token).balanceOf(to[0], i+1), transferAmount);
+            assertEq(MockERC1155(erc721Token).balanceOf(to[0], i + 1), transferAmount);
         }
     }
 
     function testFuzz_BeamTokens_AllTokens(uint256 numberOfTokens, uint256 transferAmount) public {
-        vm.assume(transferAmount > 0 && transferAmount <= 2**254);
-        vm.assume(numberOfTokens > 0 && numberOfTokens <= 25);
+        vm.assume(transferAmount > 0 && transferAmount <= 2 ** 250);
+        vm.assume(numberOfTokens > 0 && numberOfTokens <= 50);
         numberOfTokens = 4 * numberOfTokens;
         vm.deal(tokenOwner, (numberOfTokens / 4) * transferAmount);
 
         address payable[] memory to = new address payable[](numberOfTokens);
         address[] memory tokens = new address[](numberOfTokens);
         uint16[] memory types = new uint16[](numberOfTokens);
-        uint[] memory ids = new uint[](numberOfTokens);
-        uint[] memory values = new uint[](numberOfTokens);
+        uint256[] memory ids = new uint256[](numberOfTokens);
+        uint256[] memory values = new uint256[](numberOfTokens);
 
         uint256 nativeAmount;
 
@@ -482,13 +487,11 @@ contract TokenBeamerTest is Test {
             to[i] = payable(address(uint160(uint160(receiver) + i)));
 
             if (i % 4 == 0) {
-                console.log("Native");
                 tokens[i] = address(0);
                 types[i] = 0;
                 values[i] = transferAmount;
                 nativeAmount += transferAmount;
             } else if (i % 4 == 1) {
-                console.log("ERC20");
                 tokens[i] = address(new MockERC20());
                 vm.prank(deployer);
                 MockERC20(tokens[i]).mint(tokenOwner, transferAmount);
@@ -497,26 +500,24 @@ contract TokenBeamerTest is Test {
                 types[i] = 20;
                 values[i] = transferAmount;
             } else if (i % 4 == 2) {
-                console.log("ERC721");
                 tokens[i] = address(new MockERC721());
                 vm.prank(deployer);
-                MockERC721(tokens[i]).mint(tokenOwner, i+1);
+                MockERC721(tokens[i]).mint(tokenOwner, i + 1);
                 vm.prank(tokenOwner);
-                MockERC721(tokens[i]).approve(address(tokenBeamer), i+1);
+                MockERC721(tokens[i]).approve(address(tokenBeamer), i + 1);
                 types[i] = 721;
                 values[i] = 1;
             } else {
-                console.log("ERC1155");
                 tokens[i] = address(new MockERC1155());
                 vm.prank(deployer);
-                MockERC1155(tokens[i]).mint(tokenOwner, i+1, transferAmount);
+                MockERC1155(tokens[i]).mint(tokenOwner, i + 1, transferAmount);
                 vm.prank(tokenOwner);
                 MockERC1155(tokens[i]).setApprovalForAll(address(tokenBeamer), true);
                 types[i] = 1155;
                 values[i] = transferAmount;
             }
 
-            ids[i] = i+1;
+            ids[i] = i + 1;
         }
 
         vm.startPrank(tokenOwner);
@@ -528,10 +529,114 @@ contract TokenBeamerTest is Test {
             } else if (i % 4 == 1) {
                 assertEq(MockERC20(tokens[i]).balanceOf(to[i]), transferAmount);
             } else if (i % 4 == 2) {
-                assertEq(MockERC721(tokens[i]).ownerOf(i+1), to[i]);
+                assertEq(MockERC721(tokens[i]).ownerOf(i + 1), to[i]);
             } else {
-                assertEq(MockERC1155(tokens[i]).balanceOf(to[i], i+1), transferAmount);
+                assertEq(MockERC1155(tokens[i]).balanceOf(to[i], i + 1), transferAmount);
             }
         }
+    }
+
+    function testFuzz_BeamTokens_RevertWhen_BadInput(uint256 numberOfTokens, uint256 transferAmount) public {
+        vm.assume(transferAmount > 0 && transferAmount <= 2 ** 250);
+        vm.assume(numberOfTokens > 1 && numberOfTokens <= 100);
+        vm.deal(tokenOwner, numberOfTokens * transferAmount);
+
+        address payable[] memory to = new address payable[](numberOfTokens);
+        // Set an invalid tokens array
+        address[] memory tokens = new address[](0);
+        uint16[] memory types = new uint16[](numberOfTokens);
+        uint256[] memory ids = new uint256[](numberOfTokens);
+        uint256[] memory values = new uint256[](numberOfTokens);
+
+        for (uint256 i; i < numberOfTokens; i++) {
+            to[i] = payable(address(uint160(uint160(receiver) + i)));
+            types[i] = 0;
+            ids[i] = 0;
+            values[i] = transferAmount;
+        }
+
+        vm.startPrank(tokenOwner);
+        vm.expectRevert(TokenBeamer.BadInput.selector);
+        tokenBeamer.beamTokens{value: numberOfTokens * transferAmount}(to, tokens, types, ids, values);
+    }
+
+    function testFuzz_BeamTokens_TransferTips(uint256 numberOfTokens, uint256 transferAmount, uint256 tipAmount) public {
+        vm.assume(transferAmount > 0 && transferAmount <= 2 ** 250);
+        vm.assume(numberOfTokens > 0 && numberOfTokens <= 100);
+        vm.assume(tipAmount > 0 && tipAmount <= 1e18);
+        vm.deal(tokenOwner, numberOfTokens * transferAmount + tipAmount);
+
+        address payable[] memory to = new address payable[](numberOfTokens);
+        address[] memory tokens = new address[](numberOfTokens);
+        uint16[] memory types = new uint16[](numberOfTokens);
+        uint256[] memory ids = new uint256[](numberOfTokens);
+        uint256[] memory values = new uint256[](numberOfTokens);
+
+        for (uint256 i; i < numberOfTokens; i++) {
+            to[i] = payable(address(uint160(uint160(receiver) + i)));
+            tokens[i] = address(0);
+            types[i] = 0;
+            ids[i] = 0;
+            values[i] = transferAmount;
+        }
+
+        uint256 tipRecipientBalance = address(deployer).balance;
+
+        vm.startPrank(tokenOwner);
+        tokenBeamer.beamTokens{value: numberOfTokens * transferAmount + tipAmount}(to, tokens, types, ids, values);
+
+        for (uint256 i; i < numberOfTokens; i++) {
+            assertEq(to[i].balance, transferAmount);
+        }
+
+        assertEq(address(deployer).balance, tipRecipientBalance + tipAmount);
+    }
+
+    function testFuzz_ProcessTransfer_RevertWhen_BadInput(uint256 numberOfTokens, uint256 transferAmount) public {
+        vm.assume(transferAmount > numberOfTokens && transferAmount <= 2 ** 250);
+        vm.assume(numberOfTokens > 0 && numberOfTokens <= 100);
+        vm.deal(tokenOwner, numberOfTokens * transferAmount);
+
+        address payable[] memory to = new address payable[](numberOfTokens);
+        address[] memory tokens = new address[](numberOfTokens);
+        uint16[] memory types = new uint16[](numberOfTokens);
+        uint256[] memory ids = new uint256[](numberOfTokens);
+        uint256[] memory values = new uint256[](numberOfTokens);
+
+        for (uint256 i; i < numberOfTokens; i++) {
+            to[i] = payable(address(0));
+            tokens[i] = address(0);
+            types[i] = 0;
+            ids[i] = 0;
+            values[i] = transferAmount;
+        }
+
+        vm.startPrank(tokenOwner);
+        vm.expectRevert(TokenBeamer.BadInput.selector);
+        tokenBeamer.beamTokens{value: numberOfTokens * transferAmount}(to, tokens, types, ids, values);
+    }
+
+    function testFuzz_ProcessTransfer_RevertWhen_UnsupportedTokenType(uint256 numberOfTokens, uint256 transferAmount) public {
+        vm.assume(transferAmount > numberOfTokens && transferAmount <= 2 ** 250);
+        vm.assume(numberOfTokens > 0 && numberOfTokens <= 100);
+        vm.deal(tokenOwner, numberOfTokens * transferAmount);
+
+        address payable[] memory to = new address payable[](numberOfTokens);
+        address[] memory tokens = new address[](numberOfTokens);
+        uint16[] memory types = new uint16[](numberOfTokens);
+        uint256[] memory ids = new uint256[](numberOfTokens);
+        uint256[] memory values = new uint256[](numberOfTokens);
+
+        for (uint256 i; i < numberOfTokens; i++) {
+            to[i] = payable(address(uint160(uint160(receiver) + i)));
+            tokens[i] = address(0);
+            types[i] = 1000;
+            ids[i] = 0;
+            values[i] = transferAmount;
+        }
+
+        vm.startPrank(tokenOwner);
+        vm.expectRevert(abi.encodeWithSelector(TokenBeamer.UnsupportedTokenType.selector, 1000));
+        tokenBeamer.beamTokens{value: numberOfTokens * transferAmount}(to, tokens, types, ids, values);
     }
 }
