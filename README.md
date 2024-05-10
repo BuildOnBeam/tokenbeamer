@@ -49,7 +49,22 @@ npx hardhat --network ethereum etherscan-verify
 
 ### Unit tests
 
-_TODO: when done, write docs on how to run them_
+Running the tests requires to install [foundry](https://book.getfoundry.sh/getting-started/installation).
+
+```bash
+forge test
+```
+
+The following command generates the coverage report in the `report` directory.
+
+```bash
+forge coverage --report lcov && \
+lcov --remove lcov.info -o lcov.info \
+'test/*' \
+&& genhtml -o report --branch-coverage lcov.info
+```
+
+*Generating the coverage report needs `lcov` and `genhtml`.*
 
 ## User guide
 
