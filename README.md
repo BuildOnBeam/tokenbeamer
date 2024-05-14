@@ -4,19 +4,6 @@ Solidity smart contract for transferring multiple asset types (native currency,
 ERC-20, -721, -1155) to multiple recipients within one transaction, and checking
 approval states of different tokens with a single call.
 
-## To do before handing off for audit
-
-- [x] Hardhat environment setup and config
-- [x] Contract code polish and peer review
-- [x] Deploy script
-- [x] Add license
-- [x] Add Readme
-- [x] Create repository
-- [x] Invite user `qs-scope-2024` to Github repo
-- [ ] Unit tests (+ docs on how to run them)
-- [ ] Submit
-      [Quantstamp audit form](https://audit.quantstamp.com/new?from=e249c66d5786374)
-
 ## Developer guide
 
 ### Deploy and verify
@@ -49,22 +36,27 @@ npx hardhat --network ethereum etherscan-verify
 
 ### Unit tests
 
-Running the tests requires to install [foundry](https://book.getfoundry.sh/getting-started/installation).
+Running the tests requires to install the _latest_ version of [foundry](https://book.getfoundry.sh/getting-started/installation) (tested using the described `foundryup` method).
+
+- Run the test using
 
 ```bash
-forge test
+pnpm test
 ```
 
-The following command generates the coverage report in the `report` directory.
+- The coverage can be checked by running
+```bash
+pnpm coverage
+```
+
+- The following command generates a graphical coverage report in the `report` directory on Linux machines.
+It requires the packages `lcov` and `genhtml` to be installed.
 
 ```bash
-forge coverage --report lcov && \
-lcov --remove lcov.info -o lcov.info \
-'test/*' \
-&& genhtml -o report --branch-coverage lcov.info
+pnpm coverage:report
 ```
 
-*Generating the coverage report needs `lcov` and `genhtml`.*
+
 
 ## User guide
 
