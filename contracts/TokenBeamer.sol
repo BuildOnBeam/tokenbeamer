@@ -156,9 +156,10 @@ contract TokenBeamer is OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUpgr
         address operator,
         address[] calldata tokens,
         uint16[] calldata types,
+        uint[] calldata ids,
         uint[] calldata values
     ) external view virtual returns (bool[] memory) {
-        return _getApprovals(owner, operator, tokens, types, values);
+        return _getApprovals(owner, operator, tokens, types, ids, values);
     }
 
     /**
@@ -222,17 +223,20 @@ contract TokenBeamer is OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUpgr
         address operator,
         address[] calldata tokens,
         uint16[] calldata types,
+        uint[] calldata ids,
         uint[] calldata values
     ) internal view virtual returns (bool[] memory approvalStates) {
         // check input
         bool hasTypes = types.length > 0;
         bool hasValues = values.length > 0;
+        bool hasIds = ids.length > 0;
         if (
             owner == address(0) ||
             operator == address(0) ||
             tokens.length == 0 ||
             (hasTypes && tokens.length != types.length) ||
-            (hasValues && tokens.length != values.length)
+            (hasValues && tokens.length != values.length) ||
+            (hasIds && tokens.length != ids.length)
         ) {
             revert BadInput();
         }
@@ -244,7 +248,8 @@ contract TokenBeamer is OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUpgr
                 owner,
                 operator,
                 tokens[i],
-                hasTypes ? types[i] : 721,
+                hasTypes && hasIds ? types[i] : 1155,
+                hasIds ? ids[i] : 0,
                 hasValues ? values[i] : 1
             );
         }
@@ -260,12 +265,16 @@ contract TokenBeamer is OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUpgr
         address operator,
         address token,
         uint16 type_,
+        uint id,
         uint value
     ) internal view virtual returns (bool approved) {
         // check approvals by token type
-        if (type_ == 721 || type_ == 1155) {
+        if (type_ == 1155) {
             // ERC721 & ERC1155 share the same approval lookup method
-            return IERC721(token).isApprovedForAll(owner, operator);
+            return IERC1155(token).isApprovedForAll(owner, operator);
+        } else if (type_ == 721) {
+            // ERC721
+            return IERC721(token).getApproved(id) == operator;
         } else if (type_ == 20) {
             // ERC20
             return IERC20(token).allowance(owner, operator) >= value;
