@@ -217,6 +217,8 @@ contract TokenBeamer is OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUpgr
 
     /**
      * @dev Gets approval states of multiple tokens for a given owner and operator.
+     * No types provided defaults to ERC-721 if ids are provided, ERC-20 if values are provided,
+     * and ERC-1155 otherwise, in said order. Note that ERC-1155 approval checks for all, not for specific ids.
      */
     function _getApprovals(
         address owner,
@@ -248,7 +250,7 @@ contract TokenBeamer is OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUpgr
                 owner,
                 operator,
                 tokens[i],
-                hasTypes && hasIds ? types[i] : 1155,
+                hasTypes ? types[i] : (hasIds ? 721 : (hasValues ? 20 : 1155)),
                 hasIds ? ids[i] : 0,
                 hasValues ? values[i] : 1
             );
