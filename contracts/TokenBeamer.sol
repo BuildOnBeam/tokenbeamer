@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.25;
 
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
@@ -13,7 +13,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
  * @author xtools-at <github.com/xtools-at>
  * @notice A smart contract to facilitate batch token transfers (native, ERC-20, -721, -1155) and -approval checks.
  */
-contract TokenBeamer is OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUpgradeable {
+contract TokenBeamer is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUPSUpgradeable {
     /********************************************
      *** Setup
      ********************************************/
