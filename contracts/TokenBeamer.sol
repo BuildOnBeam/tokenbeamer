@@ -27,6 +27,10 @@ contract TokenBeamer is OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUpgr
     error UnsupportedTokenType(uint16 type_);
     error UpgradesDisabled();
 
+    // Events
+    event TipRecipientSet(address indexed newRecipient);
+    event ContractUpgradesDisabled();
+
     // Modifiers
     /**
      * @dev Throws if upgrades are disabled
@@ -59,6 +63,7 @@ contract TokenBeamer is OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUpgr
         __ReentrancyGuard_init_unchained();
 
         _tipRecipient = payable(_msgSender());
+        emit TipRecipientSet(_msgSender());
     }
 
     /********************************************
@@ -116,6 +121,7 @@ contract TokenBeamer is OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUpgr
         }
 
         _tipRecipient = newRecipient;
+        emit TipRecipientSet(newRecipient);
     }
 
     /**
@@ -123,6 +129,7 @@ contract TokenBeamer is OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUpgr
      */
     function disableUpgrades() external virtual onlyUpgradeable onlyOwner {
         _upgradesDisabled = true;
+        emit ContractUpgradesDisabled();
     }
 
     /**
