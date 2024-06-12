@@ -14,9 +14,11 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
  * @notice A smart contract to facilitate batch token transfers (native, ERC-20, -721, -1155) and -approval checks.
  */
 contract TokenBeamer is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUPSUpgradeable {
-    /********************************************
-     *** Setup
-     ********************************************/
+    /**
+     *
+     * Setup
+     *
+     */
 
     // State variables
     address payable internal _tipRecipient;
@@ -42,9 +44,11 @@ contract TokenBeamer is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         _;
     }
 
-    /********************************************
-     *** Constructor & Co
-     ********************************************/
+    /**
+     *
+     * Constructor & Co
+     *
+     */
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -66,9 +70,11 @@ contract TokenBeamer is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         emit TipRecipientSet(_msgSender());
     }
 
-    /********************************************
-     *** External/Public functions
-     ********************************************/
+    /**
+     *
+     * External/Public functions
+     *
+     */
 
     /**
      * @dev Multi-transfer tokens and NFTs to a single or many recipients.
@@ -83,24 +89,20 @@ contract TokenBeamer is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         address payable[] calldata to,
         address[] calldata tokens,
         uint16[] calldata types,
-        uint[] calldata ids,
-        uint[] calldata values
+        uint256[] calldata ids,
+        uint256[] calldata values
     ) external payable virtual nonReentrant {
         // check input
         bool multipleRecipients = to.length > 1;
         if (
-            to.length == 0 ||
-            (multipleRecipients && to.length != tokens.length) ||
-            tokens.length == 0 ||
-            tokens.length != types.length ||
-            tokens.length != ids.length ||
-            tokens.length != values.length
+            to.length == 0 || (multipleRecipients && to.length != tokens.length) || tokens.length == 0
+                || tokens.length != types.length || tokens.length != ids.length || tokens.length != values.length
         ) {
             revert BadInput();
         }
 
         // transfer tokens
-        for (uint i = 0; i < tokens.length; ++i) {
+        for (uint256 i = 0; i < tokens.length; ++i) {
             _processTransfer(_msgSender(), multipleRecipients ? to[i] : to[0], tokens[i], types[i], ids[i], values[i]);
         }
 
@@ -135,13 +137,12 @@ contract TokenBeamer is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
     /**
      * @dev Recovers funds stuck in the contract. Owner only.
      */
-    function recoverFunds(
-        address payable to,
-        address token,
-        uint16 type_,
-        uint id,
-        uint value
-    ) external virtual nonReentrant onlyOwner {
+    function recoverFunds(address payable to, address token, uint16 type_, uint256 id, uint256 value)
+        external
+        virtual
+        nonReentrant
+        onlyOwner
+    {
         _processTransfer(address(this), to, token, type_, id, value);
     }
 
@@ -150,10 +151,23 @@ contract TokenBeamer is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
      * This is a gas-intensive convenience method that is meant to be consumed by applications, and should
      * preferably not be called from a smart contract directly.
      *
+     * @notice Default behaviour for empty types, ids and values parameters:
+     * Types (0 = native, 20 = ERC-20, 721 = ERC-721, 1155 = ERC-1155):
+     * - If types are provided, the contract uses them to check the approval state.
+     * - If types are not provided, the contract checks if ids are provided to defaut to ERC-721, then
+     *   checks for values to default to ERC-20, and if not, defaults to ERC-1155.
+     * Ids (only used for ERC-721):
+     * - If ids are provided, the contract uses them to check the approval state of corresponding ERC-721 id.
+     * - If ids are not provided, the contract defaults to ERC-721.
+     * Values (only used for ERC-20):
+     * - If values are provided, the contract uses them to check the approval amount of ERC-20.
+     * - If values are not provided, the contract defaults the value to 1.
+     *
      * @param owner Owner of tokens.
      * @param operator Spender of tokens (e.g. TokenBeamer contract).
      * @param tokens Contract addresses of tokens.
      * @param types Types of tokens (supported: 20|721|1155). Only used for ERC20, can be left empty otherwise.
+     * @param ids Identifier of tokens. Only used for ERC721, can be left empty otherwise.
      * @param values Quantities of approved tokens. Only used for ERC20, can be left empty otherwise.
      *
      * @return approvalStates Array of booleans to indicate whether `owner`'s `token` is approved for `operator`.
@@ -163,8 +177,8 @@ contract TokenBeamer is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         address operator,
         address[] calldata tokens,
         uint16[] calldata types,
-        uint[] calldata ids,
-        uint[] calldata values
+        uint256[] calldata ids,
+        uint256[] calldata values
     ) external view virtual returns (bool[] memory) {
         return _getApprovals(owner, operator, tokens, types, ids, values);
     }
@@ -176,21 +190,19 @@ contract TokenBeamer is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         return _upgradesDisabled;
     }
 
-    /********************************************
-     *** Internal/Private functions
-     ********************************************/
+    /**
+     *
+     * Internal/Private functions
+     *
+     */
 
     /**
      * @dev Conducts single transfer for native currency, ERC-20, -721 and -1155.
      */
-    function _processTransfer(
-        address from,
-        address payable to,
-        address token,
-        uint16 type_,
-        uint id,
-        uint value
-    ) internal virtual {
+    function _processTransfer(address from, address payable to, address token, uint16 type_, uint256 id, uint256 value)
+        internal
+        virtual
+    {
         // don't allow sending to zero address or qty of 0
         if (to == address(0) || value == 0) {
             revert BadInput();
@@ -199,7 +211,7 @@ contract TokenBeamer is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         // transfer tokens by token type
         if (type_ == 721) {
             // ERC721 transfer
-            IERC721(token).safeTransferFrom(from, to, id, "");
+            IERC721(token).safeTransferFrom(from, to, id);
         } else if (type_ == 1155) {
             // ERC1155 transfer
             IERC1155(token).safeTransferFrom(from, to, id, value, "");
@@ -220,7 +232,7 @@ contract TokenBeamer is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
      * - ownership required
      * - check for upgrades being disabled permanently
      */
-    function _authorizeUpgrade(address /*newImplementation*/) internal virtual override onlyUpgradeable onlyOwner {}
+    function _authorizeUpgrade(address /*newImplementation*/ ) internal virtual override onlyUpgradeable onlyOwner {}
 
     /**
      * @dev Gets approval states of multiple tokens for a given owner and operator.
@@ -232,27 +244,24 @@ contract TokenBeamer is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         address operator,
         address[] calldata tokens,
         uint16[] calldata types,
-        uint[] calldata ids,
-        uint[] calldata values
+        uint256[] calldata ids,
+        uint256[] calldata values
     ) internal view virtual returns (bool[] memory approvalStates) {
         // check input
         bool hasTypes = types.length > 0;
         bool hasValues = values.length > 0;
         bool hasIds = ids.length > 0;
         if (
-            owner == address(0) ||
-            operator == address(0) ||
-            tokens.length == 0 ||
-            (hasTypes && tokens.length != types.length) ||
-            (hasValues && tokens.length != values.length) ||
-            (hasIds && tokens.length != ids.length)
+            owner == address(0) || operator == address(0) || tokens.length == 0
+                || (hasTypes && tokens.length != types.length) || (hasValues && tokens.length != values.length)
+                || (hasIds && tokens.length != ids.length)
         ) {
             revert BadInput();
         }
 
         // check approvals
         approvalStates = new bool[](tokens.length);
-        for (uint i = 0; i < tokens.length; ++i) {
+        for (uint256 i = 0; i < tokens.length; ++i) {
             approvalStates[i] = _getApproval(
                 owner,
                 operator,
@@ -269,22 +278,20 @@ contract TokenBeamer is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
     /**
      * @dev Returns the approval state for ERC-20, -721 and -1155.
      */
-    function _getApproval(
-        address owner,
-        address operator,
-        address token,
-        uint16 type_,
-        uint id,
-        uint value
-    ) internal view virtual returns (bool approved) {
+    function _getApproval(address owner, address operator, address token, uint16 type_, uint256 id, uint256 value)
+        internal
+        view
+        virtual
+        returns (bool approved)
+    {
         // check approvals by token type
         if (type_ == 1155) {
             // ERC721 & ERC1155 share the same approval lookup method
             return IERC1155(token).isApprovedForAll(owner, operator);
         } else if (type_ == 721) {
             // ERC721
-            return owner == operator || IERC721(token).isApprovedForAll(owner, operator) ||
-            (IERC721(token).getApproved(id) == operator && IERC721(token).ownerOf(id) == owner);
+            return owner == operator || IERC721(token).isApprovedForAll(owner, operator)
+                || (IERC721(token).getApproved(id) == operator && IERC721(token).ownerOf(id) == owner);
         } else if (type_ == 20) {
             // ERC20
             return IERC20(token).allowance(owner, operator) >= value;
