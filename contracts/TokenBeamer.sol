@@ -274,7 +274,8 @@ contract TokenBeamer is OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUpgr
             return IERC1155(token).isApprovedForAll(owner, operator);
         } else if (type_ == 721) {
             // ERC721
-            return IERC721(token).getApproved(id) == operator;
+            return owner == operator || IERC721(token).isApprovedForAll(owner, operator) ||
+            (IERC721(token).getApproved(id) == operator && IERC721(token).ownerOf(id) == owner);
         } else if (type_ == 20) {
             // ERC20
             return IERC20(token).allowance(owner, operator) >= value;
