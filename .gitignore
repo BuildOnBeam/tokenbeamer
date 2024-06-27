@@ -9,7 +9,11 @@ coverage
 dist
 node_modules
 types
-deployments
+deployments/*
+!/deployments/beam/
+!/deployments/beam-testnet/
+!/deployments/imtbl-zkevm/
+
 
 # files
 *.env
