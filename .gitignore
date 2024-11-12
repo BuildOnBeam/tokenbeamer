@@ -13,6 +13,7 @@ deployments/*
 !/deployments/beam/
 !/deployments/beam-testnet/
 !/deployments/imtbl-zkevm/
+!/deployments/imtbl-zkevm-testnet/
 
 
 # files
