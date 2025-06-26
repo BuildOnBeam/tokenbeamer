@@ -1,3 +1,4 @@
+import "@nomicfoundation/hardhat-ledger";
 import "@nomicfoundation/hardhat-toolbox";
 import { config as dotenvConfig } from "dotenv";
 import "hardhat-deploy";
@@ -145,7 +146,8 @@ const networks: Record<string, any> = {
   beam: {
     url: "https://subnets.avax.network/beam/mainnet/rpc",
     chainId: 4337,
-    accounts: accounts(),
+    // accounts: accounts(),
+    ledgerAccounts: ["0x155E596A3901D937902C72f49a24A2815Ec94f8A"],
   },
   "imtbl-zkevm": {
     url: "https://rpc.immutable.com",
