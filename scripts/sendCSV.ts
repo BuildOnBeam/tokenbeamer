@@ -3,7 +3,8 @@ import { ethers } from "hardhat";
 import hre from "hardhat";
 
 const tokenbeamerContract = "0xf88BA2d0A380615893325c51C23a33cB10C93478";
-const tokenAddress = "0x02d6d189078bde6D548E0664B61Dd7ACea96f0Aa";
+// const tokenAddress = "0xD51BFa777609213A653a2CD067c9A0132a2D316A"; // WBEAM
+const tokenAddress = "0x02d6d189078bde6D548E0664B61Dd7ACea96f0Aa"; // ATH
 
 const batchSize = 256;
 
@@ -42,6 +43,14 @@ csv.forEach((line) => {
 async function main() {
   // Get signer (assumes you have a local account configured)
   const [ledgerSigner] = await hre.ethers.getSigners();
+
+  // approve allowance
+  const ERC20 = await hre.ethers.getContractAt("IERC20", tokenAddress, ledgerSigner);
+  const totalToSend = amounts.reduce((a, b) => a + b, 0n);
+  console.log(`Approving ${hre.ethers.formatUnits(totalToSend, 18)} tokens...`);
+  const approveTx = await ERC20.approve(tokenbeamerContract, totalToSend);
+  await approveTx.wait();
+  console.log("✅  Allowance set");
 
   const TokenBeamer = await hre.ethers.getContractAt("TokenBeamer", tokenbeamerContract, ledgerSigner);
 
